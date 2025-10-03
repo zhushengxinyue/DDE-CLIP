@@ -291,9 +291,3 @@ class DFRM(BaseFormer):
         Fm = self.ConvProj(torch.cat((Fm, FmConv), dim=1))
         return x + self.Dropout(Fm)
 
-
-if __name__ == '__main__':
-    input = torch.randn(1, 8, 512, 512)
-    block = DFRM(InChannels=8)
-    output = block(input)
-    print(output.size())
