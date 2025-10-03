@@ -39,16 +39,11 @@ def test(args):
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     DDECLIP_parameters = {"Prompt_length": args.n_ctx, "learnabel_text_embedding_depth": args.depth, "learnabel_text_embedding_length": args.t_n_ctx}
-    
-    # model, _ = models.load("ViT-L/14@336px", device=device, design_details = DDECLIP_parameters)
-    model, _ = models.load("pretrained_weight/ViT-L-14-336px.pt", device=device, design_details = DDECLIP_parameters)
-    model.eval()
 
     preprocess, target_transform = get_transform(args)
     test_data = Dataset(root=args.data_path, transform=preprocess, target_transform=target_transform, dataset_name = args.dataset)
     test_dataloader = torch.utils.data.DataLoader(test_data, batch_size=1, shuffle=False)
     obj_list = test_data.obj_list
-
 
     results = {}
     metrics = {}
@@ -67,20 +62,29 @@ def test(args):
         metrics[obj]['image-ap'] = 0
         metrics[obj]['image-maxF1'] = 0
 
+    model, _ = models.load("pretrained_weight/ViT-L-14-336px.pt", device=device, design_details = DDECLIP_parameters)
+    model.eval()
+    
     prompt_learner = DDECLIP_PromptLearner(model.to("cpu"), DDECLIP_parameters)
     checkpoint = torch.load(args.checkpoint_path)
     prompt_learner.load_state_dict(checkpoint["prompt_learner"])
     prompt_learner.to(device)
+
+    model.visual.adapters.load_state_dict(checkpoint["adapters"])
+    model.visual.adapter_weights.load_state_dict(checkpoint["adapter_weights"])
+    model.cross_attn_layers.load_state_dict(checkpoint["cross_attn_layers"])
+    model.diff_ln.load_state_dict(checkpoint["diff_ln"])
+    model.gamma_text.data.copy_(checkpoint["gamma_text"].data)
+    
     model.to(device)
     model.visual.DAPM_replace(DPAM_layer = 20)
+    model.eval()
       
     prompts, tokenized_prompts, compound_prompts_text = prompt_learner(cls_id = None)
     text_features = model.encode_text_learn(prompts, tokenized_prompts, compound_prompts_text).float()
     text_features = torch.stack(torch.chunk(text_features, dim = 0, chunks = 2), dim = 1)
     text_features = text_features/text_features.norm(dim=-1, keepdim=True)
 
-
-    model.to(device)
     for idx, items in enumerate(tqdm(test_dataloader)):
         image = items['img'].to(device)
         cls_name = items['cls_name']
