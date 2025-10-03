@@ -1,4 +1,4 @@
-# DDE-CLIP
+# DDE-CLIP: Detail-Guided Dual-Modal Enhancement for Zero-Shot Anomaly Detection
 [CIKM'25] DDE-CLIP: Detail-Guided Dual-Modal Enhancement for Zero-Shot Anomaly Detection
 
 ## Introduction
