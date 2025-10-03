@@ -597,6 +597,3 @@ class DDECLIP(nn.Module):
 
         return logits_per_image, logits_per_text
 
-
-if __name__ == '__main__':
-    x = torch.randn(16,700,8)
