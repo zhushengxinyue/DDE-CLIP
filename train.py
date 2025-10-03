@@ -66,8 +66,6 @@ def train(args):
 
     optimizer = torch.optim.Adam(params_to_optimize, lr=args.learning_rate, betas=(0.5, 0.999))
 
-    # optimizer = torch.optim.Adam(list(prompt_learner.parameters()), lr=args.learning_rate, betas=(0.5, 0.999))
-
     # losses
     loss_focal = FocalLoss()
     loss_dice = BinaryDiceLoss()
@@ -129,7 +127,13 @@ def train(args):
 
         if (epoch + 1) % args.save_freq == 0:
             ckp_path = os.path.join(args.save_path, 'epoch_' + str(epoch + 1) + '.pth')
-            torch.save({"prompt_learner": prompt_learner.state_dict()}, ckp_path)
+            torch.save({
+                "prompt_learner": prompt_learner.state_dict(),
+                "adapters": model.visual.adapters.state_dict(),
+                "cross_attn_layers": model.cross_attn_layers.state_dict(),
+                "gamma_text": model.gamma_text,
+                "diff_ln": model.diff_ln.state_dict(),
+            }, ckp_path)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("DDECLIP", add_help=True)
