@@ -12,21 +12,23 @@ class VTRM(nn.Module):
         self.activation = F.relu
         self._reset_parameters()
         self.MLP = nn.Linear(d_model, d_model)
+        
     def _reset_parameters(self):
         for p in self.parameters():
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
+                
     def with_pos_embed(self, tensor, pos: Optional[Tensor]):
         return tensor if pos is None else tensor + pos
+        
     def forward(self, tgt, memory, flat:str,
                 memory_mask: Optional[Tensor] = None,
                 memory_key_padding_mask: Optional[Tensor] = None,
                 pos: Optional[Tensor] = None,
                 query_pos: Optional[Tensor] = None,):
         
-        # memory : h*w,b,c     tgt : l,b,d
         memory = self.visual_proj(memory)
-        memory = self.adaptive_pool(memory.permute(1,2,0))  # [8, 768, 77]
+        memory = self.adaptive_pool(memory.permute(1,2,0))
         memory = memory.permute(2, 0, 1)
         if flat=="text": 
             tgt2 = self.multihead_attn(query=self.with_pos_embed(tgt, query_pos), # text
